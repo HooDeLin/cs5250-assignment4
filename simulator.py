@@ -112,7 +112,6 @@ def SJF_scheduling(process_list, alpha):
     schedule = []
     index = 0
     waiting_time = 0
-    waiting_dict = {}
     current_time = 0
     sjf_queue = []
     history_stats = {}
