@@ -10,6 +10,7 @@ Output files:
     SJF.txt
 '''
 import sys
+import heapq
 
 input_file = 'input.txt'
 
@@ -48,7 +49,7 @@ def RR_scheduling(process_list, time_quantum ):
     index = 1
     waiting_time = 0
     previous_process = (None, None)
-    processed_process = set([])
+    waiting_dict = {}
     while len(rr_queue) != 0 or index < len(process_list):
         # A new process has arrived
         current_process = None
@@ -59,10 +60,8 @@ def RR_scheduling(process_list, time_quantum ):
             current_process.burst_time -= current_time_quantum
             if (current_process.id, current_process.arrive_time) != previous_process: # There is process switching, add to schedule
                 schedule.append((current_time, current_process.id))
+                waiting_time += current_time - waiting_dict.get((current_process.id, current_process.arrive_time), current_process.arrive_time)
             previous_process = (current_process.id, current_process.arrive_time)
-            if previous_process not in processed_process: # This is the first time the process is being ran
-                waiting_time += current_time
-            processed_process.add(previous_process)
         current_time += current_time_quantum
         # We add new process that came into the queue for the next time quantum
         while index < len(process_list) and process_list[index].arrive_time <= current_time:
@@ -71,12 +70,43 @@ def RR_scheduling(process_list, time_quantum ):
         # If current process is not done, we add it into the end of the queue
         if current_process is not None and current_process.burst_time != 0: # The process is not done
             rr_queue.append(current_process)
+            waiting_dict[previous_process] = current_time
 
-    # for process in process_list:
     return (schedule, waiting_time/float(len(process_list)))
 
 def SRTF_scheduling(process_list):
-    return (["to be completed, scheduling process_list on SRTF, using process.burst_time to calculate the remaining time of the current process "], 0.0)
+    schedule = []
+    index = 1
+    waiting_time = 0
+    previous_process = (None, None)
+    srtf_heap = []
+    heapq.heappush(srtf_heap, (process_list[0].burst_time, process_list[0].arrive_time, process_list[0].id))
+    waiting_dict = {}
+    current_time = 0
+    while len(srtf_heap) != 0 or index < len(process_list):
+        if len(srtf_heap) == 0: # There's no more process in the heap, but there are still processes incoming in the future
+            # We fast-forward into the future
+            current_time = process_list[index].arrive_time
+            heapq.heappush(srtf_heap, (process_list[index].burst_time, process_list[index].arrive_time, process_list[index].id))
+            index += 1
+            continue
+        current_burst_time, current_arrive_time, current_id = heapq.heappop(srtf_heap) # This is the process that has the smallest remaining time
+        if (current_id, current_arrive_time) != previous_process: # There is process switching, add to schedule
+            schedule.append((current_time, current_id))
+            waiting_time += current_time - waiting_dict.get((current_id, current_arrive_time), current_arrive_time)
+        previous_process = (current_id, current_arrive_time)
+        time_quantum = current_burst_time # We assume that we can finish this job without preempt
+        if index < len(process_list) and process_list[index].arrive_time < current_time + time_quantum: # There's a new process before the current one can finish
+            time_quantum = min(time_quantum, process_list[index].arrive_time - current_time)
+            heapq.heappush(srtf_heap, (process_list[index].burst_time, process_list[index].arrive_time, process_list[index].id))
+            index += 1
+        current_burst_time -= time_quantum
+        current_time += time_quantum
+        if current_burst_time != 0: # The process is not finished yet
+            heapq.heappush(srtf_heap, (current_burst_time, current_arrive_time, current_id))
+            waiting_dict[previous_process] = current_time
+
+    return (schedule, waiting_time/float(len(process_list)))
 
 def SJF_scheduling(process_list, alpha):
     return (["to be completed, scheduling SJF without using information from process.burst_time"],0.0)
@@ -110,9 +140,9 @@ def main(argv):
     print ("simulating RR ----")
     RR_schedule, RR_avg_waiting_time =  RR_scheduling(process_list,time_quantum = 2)
     write_output('RR.txt', RR_schedule, RR_avg_waiting_time )
-    # print ("simulating SRTF ----")
-    # SRTF_schedule, SRTF_avg_waiting_time =  SRTF_scheduling(process_list)
-    # write_output('SRTF.txt', SRTF_schedule, SRTF_avg_waiting_time )
+    print ("simulating SRTF ----")
+    SRTF_schedule, SRTF_avg_waiting_time =  SRTF_scheduling(process_list)
+    write_output('SRTF.txt', SRTF_schedule, SRTF_avg_waiting_time )
     # print ("simulating SJF ----")
     # SJF_schedule, SJF_avg_waiting_time =  SJF_scheduling(process_list, alpha = 0.5)
     # write_output('SJF.txt', SJF_schedule, SJF_avg_waiting_time )
