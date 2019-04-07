@@ -41,7 +41,39 @@ def FCFS_scheduling(process_list):
 #Output_1 : Schedule list contains pairs of (time_stamp, proccess_id) indicating the time switching to that proccess_id
 #Output_2 : Average Waiting Time
 def RR_scheduling(process_list, time_quantum ):
-    return (["to be completed, scheduling process_list on round robin policy with time_quantum"], 0.0)
+    schedule = []
+    current_time = 0
+    rr_queue = []
+    rr_queue.append(Process(process_list[0].id, process_list[0].arrive_time, process_list[0].burst_time))
+    index = 1
+    waiting_time = 0
+    previous_process = (None, None)
+    processed_process = set([])
+    while len(rr_queue) != 0 or index < len(process_list):
+        # A new process has arrived
+        current_process = None
+        current_time_quantum = time_quantum
+        if len(rr_queue) != 0:
+            current_process = rr_queue.pop(0)
+            current_time_quantum = min(time_quantum, current_process.burst_time)
+            current_process.burst_time -= current_time_quantum
+            if (current_process.id, current_process.arrive_time) != previous_process: # There is process switching, add to schedule
+                schedule.append((current_time, current_process.id))
+            previous_process = (current_process.id, current_process.arrive_time)
+            if previous_process not in processed_process: # This is the first time the process is being ran
+                waiting_time += current_time
+            processed_process.add(previous_process)
+        current_time += current_time_quantum
+        # We add new process that came into the queue for the next time quantum
+        while index < len(process_list) and process_list[index].arrive_time <= current_time:
+            rr_queue.append(Process(process_list[index].id, process_list[index].arrive_time, process_list[index].burst_time))
+            index += 1
+        # If current process is not done, we add it into the end of the queue
+        if current_process is not None and current_process.burst_time != 0: # The process is not done
+            rr_queue.append(current_process)
+
+    # for process in process_list:
+    return (schedule, waiting_time/float(len(process_list)))
 
 def SRTF_scheduling(process_list):
     return (["to be completed, scheduling process_list on SRTF, using process.burst_time to calculate the remaining time of the current process "], 0.0)
@@ -72,18 +104,18 @@ def main(argv):
     print ("printing input ----")
     for process in process_list:
         print (process)
-    print ("simulating FCFS ----")
-    FCFS_schedule, FCFS_avg_waiting_time =  FCFS_scheduling(process_list)
-    write_output('FCFS.txt', FCFS_schedule, FCFS_avg_waiting_time )
+    # print ("simulating FCFS ----")
+    # FCFS_schedule, FCFS_avg_waiting_time =  FCFS_scheduling(process_list)
+    # write_output('FCFS.txt', FCFS_schedule, FCFS_avg_waiting_time )
     print ("simulating RR ----")
     RR_schedule, RR_avg_waiting_time =  RR_scheduling(process_list,time_quantum = 2)
     write_output('RR.txt', RR_schedule, RR_avg_waiting_time )
-    print ("simulating SRTF ----")
-    SRTF_schedule, SRTF_avg_waiting_time =  SRTF_scheduling(process_list)
-    write_output('SRTF.txt', SRTF_schedule, SRTF_avg_waiting_time )
-    print ("simulating SJF ----")
-    SJF_schedule, SJF_avg_waiting_time =  SJF_scheduling(process_list, alpha = 0.5)
-    write_output('SJF.txt', SJF_schedule, SJF_avg_waiting_time )
+    # print ("simulating SRTF ----")
+    # SRTF_schedule, SRTF_avg_waiting_time =  SRTF_scheduling(process_list)
+    # write_output('SRTF.txt', SRTF_schedule, SRTF_avg_waiting_time )
+    # print ("simulating SJF ----")
+    # SJF_schedule, SJF_avg_waiting_time =  SJF_scheduling(process_list, alpha = 0.5)
+    # write_output('SJF.txt', SJF_schedule, SJF_avg_waiting_time )
 
 if __name__ == '__main__':
     main(sys.argv[1:])
