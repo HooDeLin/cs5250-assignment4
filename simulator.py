@@ -73,7 +73,6 @@ def RR_scheduling(process_list, time_quantum ):
         if current_process is not None and current_process.burst_time != 0: # The process is not done
             rr_queue.append(current_process)
             waiting_dict[previous_process] = current_time
-        print(rr_queue)
 
     return (schedule, waiting_time/float(len(process_list)))
 
