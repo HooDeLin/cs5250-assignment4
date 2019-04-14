@@ -62,7 +62,9 @@ def RR_scheduling(process_list, time_quantum ):
                 schedule.append((current_time, current_process.id))
                 waiting_time += current_time - waiting_dict.get((current_process.id, current_process.arrive_time), current_process.arrive_time)
             previous_process = (current_process.id, current_process.arrive_time)
-        current_time += current_time_quantum
+            current_time += current_time_quantum
+        else:
+            current_time = process_list[index].arrive_time
         # We add new process that came into the queue for the next time quantum
         while index < len(process_list) and process_list[index].arrive_time <= current_time:
             rr_queue.append(Process(process_list[index].id, process_list[index].arrive_time, process_list[index].burst_time))
@@ -71,6 +73,7 @@ def RR_scheduling(process_list, time_quantum ):
         if current_process is not None and current_process.burst_time != 0: # The process is not done
             rr_queue.append(current_process)
             waiting_dict[previous_process] = current_time
+        print(rr_queue)
 
     return (schedule, waiting_time/float(len(process_list)))
 
